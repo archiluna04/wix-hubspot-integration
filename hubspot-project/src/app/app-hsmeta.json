@@ -1,0 +1,32 @@
+{
+  "uid": "wix_hubspot_sync_app",
+  "type": "app",
+  "config": {
+    "name": "Wix HubSpot Sync",
+    "description": "Two-way contact sync between Wix and HubSpot, plus Wix form lead capture with UTM attribution.",
+    "distribution": "marketplace",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": ["https://pardon-creed-muscular.ngrok-free.dev/oauth/hubspot/callback"],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.schemas.contacts.read",
+        "crm.schemas.contacts.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@example.com",
+      "documentationUrl": "https://pardon-creed-muscular.ngrok-free.dev/dashboard",
+      "supportUrl": "https://pardon-creed-muscular.ngrok-free.dev/dashboard"
+    }
+  }
+}

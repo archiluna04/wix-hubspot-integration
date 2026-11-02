@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HubSpot Sync</title>
+    <link rel="stylesheet" href="/assets/dashboard.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <h1>HubSpot Integration</h1>
+        <p class="subtitle">Keep Wix contacts and HubSpot in sync, and send form leads to HubSpot with UTM attribution.</p>
+      </div>
+      <span id="conn-badge" class="badge badge-muted">Loading…</span>
+    </header>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="boot" class="boot">Loading…</div>
+
+    <main id="app" hidden>
+      <!-- Connection -->
+      <section class="card">
+        <div class="card-head">
+          <h2>HubSpot connection</h2>
+        </div>
+        <div class="card-body">
+          <div id="conn-disconnected">
+            <p>Connect your HubSpot account to start syncing. You'll sign in to HubSpot in a new window. We never see your password, and access tokens stay on our server.</p>
+            <button id="connect-btn" class="btn btn-primary" type="button">Connect HubSpot</button>
+          </div>
+          <div id="conn-connected" hidden>
+            <dl class="facts">
+              <div><dt>HubSpot account (portal) ID</dt><dd id="portal-id"></dd></div>
+              <div><dt>Connected</dt><dd id="connected-at"></dd></div>
+              <div><dt>Linked contacts</dt><dd id="linked-count"></dd></div>
+              <div><dt>Attribution properties</dt><dd id="props-ready"></dd></div>
+            </dl>
+            <div class="actions">
+              <button id="disconnect-btn" class="btn btn-danger" type="button">Disconnect</button>
+              <button id="repair-btn" class="btn" type="button" hidden>Create HubSpot properties</button>
+            </div>
+          </div>
+          <details class="scopes">
+            <summary>Permissions requested</summary>
+            <ul id="scope-list"></ul>
+          </details>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Sync settings</h2>
+        </div>
+        <div class="card-body settings">
+          <label class="switch-row">
+            <input type="checkbox" id="set-sync" />
+            <span><strong>Two-way contact sync</strong><small>Create and update contacts in both Wix and HubSpot automatically.</small></span>
+          </label>
+          <label class="field">
+            <span><strong>When both sides changed</strong><small>How conflicting edits to the same field are resolved.</small></span>
+            <select id="set-conflict">
+              <option value="last_updated_wins">Most recent update wins</option>
+              <option value="hubspot_wins">HubSpot always wins</option>
+              <option value="wix_wins">Wix always wins</option>
+            </select>
+          </label>
+          <label class="switch-row">
+            <input type="checkbox" id="set-forms" />
+            <span><strong>Send Wix form submissions to HubSpot</strong><small>Creates or updates the HubSpot contact with UTM source, page URL, referrer and timestamp.</small></span>
+          </label>
+          <label class="switch-row">
+            <input type="checkbox" id="set-lead" />
+            <span><strong>Mark new form contacts as leads</strong><small>Sets lifecycle stage to "Lead" only when the contact has no stage yet.</small></span>
+          </label>
+          <div class="actions">
+            <button id="save-settings-btn" class="btn btn-primary" type="button">Save settings</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mapping -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Field mapping</h2>
+          <p>Choose which Wix fields sync to which HubSpot properties, and in which direction.</p>
+        </div>
+        <div class="card-body">
+          <p id="fields-warning" class="notice notice-warn" hidden></p>
+          <div class="table-wrap">
+            <table class="mapping">
+              <thead>
+                <tr>
+                  <th scope="col">Wix field</th>
+                  <th scope="col">HubSpot property</th>
+                  <th scope="col">Sync direction</th>
+                  <th scope="col">Transform</th>
+                  <th scope="col">Default value</th>
+                  <th scope="col"><span class="sr-only">Remove</span></th>
+                </tr>
+              </thead>
+              <tbody id="mapping-rows"></tbody>
+            </table>
+          </div>
+          <ul id="mapping-errors" class="errors" hidden></ul>
+          <div class="actions">
+            <button id="add-row-btn" class="btn" type="button">+ Add field</button>
+            <button id="reset-rows-btn" class="btn btn-link" type="button">Discard changes</button>
+            <span class="spacer"></span>
+            <button id="save-mapping-btn" class="btn btn-primary" type="button">Save mapping</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity -->
+      <section class="card">
+        <div class="card-head row">
+          <div>
+            <h2>Activity</h2>
+            <p id="queue-info"></p>
+          </div>
+          <div class="actions">
+            <button id="full-sync-btn" class="btn" type="button">Sync all existing contacts</button>
+            <button id="refresh-btn" class="btn btn-link" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="tabs" role="tablist">
+            <button role="tab" id="tab-sync" aria-selected="true" aria-controls="panel-sync" type="button">Contact sync</button>
+            <button role="tab" id="tab-forms" aria-selected="false" aria-controls="panel-forms" type="button">Form submissions</button>
+          </div>
+          <div id="panel-sync" role="tabpanel" aria-labelledby="tab-sync">
+            <div class="table-wrap">
+              <table class="log">
+                <thead>
+                  <tr><th>Time</th><th>From</th><th>Result</th><th>Fields</th><th>Wix ID</th><th>HubSpot ID</th></tr>
+                </thead>
+                <tbody id="sync-log"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="panel-forms" role="tabpanel" aria-labelledby="tab-forms" hidden>
+            <div class="table-wrap">
+              <table class="log">
+                <thead>
+                  <tr><th>Time</th><th>Form</th><th>Status</th><th>UTM source / medium / campaign</th><th>HubSpot ID</th><th>Latency</th></tr>
+                </thead>
+                <tbody id="form-log"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- How attribution works -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Form attribution in HubSpot</h2>
+        </div>
+        <div class="card-body prose">
+          <p>When a visitor submits a Wix form, the contact is created or updated in HubSpot within seconds. Attribution is stored in the HubSpot property group <strong>Wix Integration</strong>:</p>
+          <ul>
+            <li><code>wix_original_utm_*</code>, <code>wix_original_landing_page</code>, <code>wix_original_referrer</code>: first touch, never overwritten</li>
+            <li><code>wix_latest_utm_*</code>: UTM parameters of the most recent visit</li>
+            <li><code>wix_last_form_name</code>, <code>wix_last_form_page_url</code>, <code>wix_last_form_referrer</code>, <code>wix_last_form_submitted_at</code></li>
+          </ul>
+          <p>UTM parameters are captured automatically by the site script. You can also add hidden form fields named <code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, <code>utm_term</code> and <code>utm_content</code>. To send a custom form field to an existing HubSpot property, set the field's key to the property's internal name (for example <code>jobtitle</code>).</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/assets/dashboard.js"></script>
+  </body>
+</html>
