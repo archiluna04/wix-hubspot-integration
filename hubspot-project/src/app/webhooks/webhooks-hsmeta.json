@@ -3,7 +3,7 @@
   "type": "webhooks",
   "config": {
     "settings": {
-      "targetUrl": "https://pardon-creed-muscular.ngrok-free.dev/webhooks/hubspot",
+      "targetUrl": "https://wix-hubspot-sync-archi.azurewebsites.net/webhooks/hubspot",
       "maxConcurrentRequests": 10
     },
     "subscriptions": {

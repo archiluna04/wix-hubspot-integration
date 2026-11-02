@@ -18,6 +18,7 @@ const schema = z
       .url()
       .transform((u) => u.replace(/\/+$/, '')),
     DATABASE_PATH: z.string().default('./data/app.db'),
+    SQLITE_JOURNAL_MODE: z.enum(['WAL', 'DELETE']).default('WAL'),
     SESSION_SECRET: z.string().min(32, 'must be at least 32 characters'),
     WIX_APP_ID: z.string().min(1),
     WIX_APP_SECRET: z.string().min(1),

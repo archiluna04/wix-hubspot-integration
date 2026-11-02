@@ -7,7 +7,7 @@
     "distribution": "marketplace",
     "auth": {
       "type": "oauth",
-      "redirectUrls": ["https://pardon-creed-muscular.ngrok-free.dev/oauth/hubspot/callback"],
+      "redirectUrls": ["https://wix-hubspot-sync-archi.azurewebsites.net/oauth/hubspot/callback"],
       "requiredScopes": [
         "oauth",
         "crm.objects.contacts.read",
@@ -25,8 +25,8 @@
     },
     "support": {
       "supportEmail": "support@example.com",
-      "documentationUrl": "https://pardon-creed-muscular.ngrok-free.dev/dashboard",
-      "supportUrl": "https://pardon-creed-muscular.ngrok-free.dev/dashboard"
+      "documentationUrl": "https://wix-hubspot-sync-archi.azurewebsites.net/dashboard",
+      "supportUrl": "https://wix-hubspot-sync-archi.azurewebsites.net/dashboard"
     }
   }
 }

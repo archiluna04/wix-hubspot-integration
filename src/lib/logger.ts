@@ -25,7 +25,17 @@ export function scrub(text: string): string {
 export function errorInfo(err: unknown): Record<string, unknown> {
   if (err instanceof Error) {
     const status = (err as { status?: unknown }).status;
-    return { type: err.name, message: scrub(err.message), ...(typeof status === 'number' ? { status } : {}) };
+    // Upstream error codes (e.g. HubSpot's "BAD_REDIRECT_URI") are enum-like and safe to log; the rest of the body is not.
+    const details = (err as { details?: { status?: unknown; category?: unknown } }).details;
+    const raw = details && typeof details === 'object' ? (details.category ?? details.status) : undefined;
+    // Not logged under "code": that key is redacted because it usually holds an OAuth authorization code.
+    const reason = typeof raw === 'string' && /^[A-Z_]{3,40}$/.test(raw) ? raw : undefined;
+    return {
+      type: err.name,
+      message: scrub(err.message),
+      ...(typeof status === 'number' ? { status } : {}),
+      ...(reason ? { reason } : {}),
+    };
   }
   return { message: scrub(String(err)) };
 }

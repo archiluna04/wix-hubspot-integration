@@ -9,6 +9,18 @@ A self-hosted Wix app that lets site owners:
 
 See **[docs/API_PLAN.md](docs/API_PLAN.md)** for the APIs used for each feature and the design decisions.
 
+## Live demo (for reviewers)
+
+The app runs on Azure App Service at **https://wix-hubspot-sync-archi.azurewebsites.net** (`/healthz` returns `{"ok":true}`). It is installed on the Wix dev site **HubSpot Sync Test**. The test login for that site is sent separately.
+
+1. Sign in to Wix with the test login, open the **HubSpot Sync Test** site dashboard, and open **HubSpot Sync** from the apps menu.
+2. **Connection:** the card shows the connected HubSpot account. You can click **Disconnect**, then **Connect HubSpot** to connect your own HubSpot account instead.
+3. **Field mapping:** change a row and click **Save mapping**.
+4. **Wix → HubSpot:** create or edit a contact in Wix **Contacts**. It appears in HubSpot within a few seconds.
+5. **HubSpot → Wix:** edit a mapped property (e.g. job title) in HubSpot. It appears in Wix within a few seconds.
+6. **Form lead with UTM:** in a private window, open the published site with `?utm_source=demo&utm_medium=test&utm_campaign=review`, then submit the **Contact Us** form with a new email. The HubSpot contact gets the `wix_latest_utm_*` / `wix_original_utm_*` properties and is marked as a lead.
+7. The **Activity** and **Form submissions** tabs show each sync, including echoes that were skipped to prevent loops.
+
 ## Architecture
 
 ```
@@ -88,7 +100,25 @@ npm test                  # unit + loop-prevention simulation tests
 
 Wix and HubSpot must reach the server over HTTPS. For local development, run `ngrok http 3000` and set `APP_BASE_URL` to the tunnel URL. With `DEV_LOGIN_ENABLED=true`, `/dashboard?dev=1` opens the UI without Wix, which is useful for testing the HubSpot connection and the mapping UI.
 
-### 4. Deploy (example: Cloud Run + Secret Manager)
+### 4. Deploy: Azure App Service (used by the live demo)
+
+A Linux B1 plan with the built-in Node 24 runtime. The SQLite database lives in `/home`, which persists across restarts and deploys.
+
+```bash
+az group create -n rg-wix-hubspot -l southeastasia
+az appservice plan create -g rg-wix-hubspot -n plan-wix-hubspot --sku B1 --is-linux
+az webapp create -g rg-wix-hubspot -p plan-wix-hubspot -n <app-name> --runtime "NODE:24-lts"
+az webapp config set -g rg-wix-hubspot -n <app-name> --always-on true --startup-file "npm start"
+az webapp update -g rg-wix-hubspot -n <app-name> --https-only true
+# App settings: the values from .env, plus
+#   NODE_ENV=production  DATABASE_PATH=/home/data/app.db  SQLITE_JOURNAL_MODE=DELETE
+#   SCM_DO_BUILD_DURING_DEPLOYMENT=false
+az webapp config appsettings set -g rg-wix-hubspot -n <app-name> --settings @settings.json
+```
+
+`/home` is a network share, where SQLite's WAL mode is unreliable, so set `SQLITE_JOURNAL_MODE=DELETE`. To deploy, build locally and zip-deploy the output (`dist`, `public`, production `node_modules`, `package*.json`) with `az webapp deploy --type zip`. Then set `APP_BASE_URL` to `https://<app-name>.azurewebsites.net`, run `npm run hubspot:configure` and `hs project upload`, and update the Wix dashboard page, webhook and embedded script URLs.
+
+### 5. Deploy: alternative (Cloud Run + Secret Manager)
 
 ```bash
 gcloud run deploy wix-hubspot --source . --region us-central1 --allow-unauthenticated \

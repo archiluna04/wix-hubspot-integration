@@ -20,7 +20,7 @@ const MAX_BACKFILL = 5000;
 const config = loadConfig();
 setLogLevel(config.LOG_LEVEL);
 
-const db = openDatabase(config.DATABASE_PATH);
+const db = openDatabase(config.DATABASE_PATH, config.SQLITE_JOURNAL_MODE);
 const store = new Store(db);
 const secrets = createSecretStore(config, db);
 const oauth = new HubSpotOAuth({

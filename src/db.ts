@@ -124,10 +124,12 @@ CREATE TABLE IF NOT EXISTS secrets (
 );
 `;
 
-export function openDatabase(path: string): DatabaseSync {
+// WAL needs shared memory, which network file shares (e.g. Azure App Service /home) don't
+// support reliably; use DELETE there.
+export function openDatabase(path: string, journalMode: 'WAL' | 'DELETE' = 'WAL'): DatabaseSync {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
-  db.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;');
+  db.exec(`PRAGMA journal_mode = ${journalMode}; PRAGMA busy_timeout = 5000;`);
   db.exec(SCHEMA);
   return db;
 }
